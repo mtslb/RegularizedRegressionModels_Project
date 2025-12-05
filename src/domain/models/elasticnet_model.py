@@ -1,31 +1,34 @@
-# src/domain/models/elasticnet_model.py
-from src.domain import data_processing as dp
-from src.domain import evaluation as ev
 from utils.seed import set_seed
 from sklearn.linear_model import ElasticNet
 from sklearn.model_selection import KFold
 import numpy as np
 
-def run_model(n_splits=5):
+def run_model(df=None, dataset_path: str = None, n_splits=5):
+    """
+    Exécute un modèle ElasticNet pour prédire y_score et y_members.
+    """
+    import src.domain.data_processing as dp
+    import src.domain.evaluation as ev
+
     set_seed(42)
 
-    # --- Charger et préparer les données ---
-    df = dp.load_data("anime_features_.csv")
+    if df is None:
+        if dataset_path is None:
+            raise ValueError("Il faut fournir df ou dataset_path")
+        df = dp.load_data(dataset_path)
+
     X, y = dp.split_features_targets(df)
     scaler = dp.StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
-    # Log-transform pour y_members
     y_members_log = np.log1p(y["y_members"])
 
-    # --- Modèles ---
     model_score = ElasticNet(alpha=0.01, l1_ratio=0.5, max_iter=50000)
     model_members = ElasticNet(alpha=0.1, l1_ratio=0.5, max_iter=50000)
 
-    # --- K-Fold Cross Validation ---
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    # Scores pour y_score
+    # --- y_score ---
     metrics_score_list = []
     for train_idx, val_idx in kf.split(X_scaled):
         X_train, X_val = X_scaled[train_idx], X_scaled[val_idx]
@@ -38,7 +41,7 @@ def run_model(n_splits=5):
     print("\n===== ElasticNet - y_score (K-Fold CV) =====")
     print(metrics_score_avg)
 
-    # Scores pour y_members (log)
+    # --- y_members ---
     metrics_members_list = []
     for train_idx, val_idx in kf.split(X_scaled):
         X_train, X_val = X_scaled[train_idx], X_scaled[val_idx]
