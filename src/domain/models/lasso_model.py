@@ -1,16 +1,28 @@
-# src/domain/models/lasso_model.py
-from src.domain import data_processing as dp
-from src.domain import evaluation as ev
 from utils.seed import set_seed
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import KFold
 import numpy as np
 
-def run_model(n_splits=5):
+def run_model(df, dataset_path: str = None, n_splits=5):
+    """
+    Exécute un modèle Lasso pour prédire y_score et y_members.
+
+    Args:
+        df (pd.DataFrame, optional): DataFrame prêt à l'emploi.
+        dataset_path (str, optional): Chemin vers le CSV si df n'est pas fourni.
+        n_splits (int): Nombre de splits pour K-Fold.
+    """
+    import src.domain.data_processing as dp
+    import src.domain.evaluation as ev
+
     set_seed(42)
 
     # --- Charger et préparer les données ---
-    df = dp.load_data("anime_features_.csv")
+    if df is None:
+        if dataset_path is None:
+            raise ValueError("Il faut fournir df ou dataset_path")
+        df = dp.load_data(dataset_path)
+
     X, y = dp.split_features_targets(df)
     scaler = dp.StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -34,7 +46,6 @@ def run_model(n_splits=5):
         y_pred = model_score.predict(X_val)
         metrics_score_list.append(ev.evaluate_model(y_val, y_pred))
 
-    # Moyenne des métriques
     metrics_score_avg = {k: np.mean([m[k] for m in metrics_score_list]) for k in metrics_score_list[0]}
     print("\n===== Lasso - y_score (K-Fold CV) =====")
     print(metrics_score_avg)

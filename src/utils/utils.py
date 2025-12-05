@@ -2,7 +2,7 @@
 
 # Colonnes à conserver dans le dataset
 COLUMNS_TO_KEEP = [
-    "mal_id", "type", "status", "genres", "studios", "themes",
+    "mal_id", "type", "genres", "studios", "themes",
     "start_date", "demographics", "source", "rating", "episodes",
     "season", "score", "members"
 ]

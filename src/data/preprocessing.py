@@ -95,6 +95,7 @@ def preprocess_anime_dataset(start_year=2010):
     # 7. Renommer score et members
     # ----------------------------
     details = details.rename(columns={"score": "y_score", "members": "y_members"})
+    details.dropna()
 
     # ----------------------------
     # 8. Sauvegarder
@@ -102,6 +103,7 @@ def preprocess_anime_dataset(start_year=2010):
     output_path = PROCESSED_DIR / f"anime_dataset_{start_year}.csv"
 
     # Générer le CSV uniquement si le fichier n'existe pas
+    details.to_csv(output_path, index=False)
     if not output_path.exists():
         details.to_csv(output_path, index=False)
         print(f"Fichier généré : {output_path}")

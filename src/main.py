@@ -37,12 +37,9 @@ def run_pipeline(start_year=2010, models_to_run=None):
 
     # Sauvegarde du dataset final uniquement si il n'existe pas
     final_path = PROCESSED / f"anime_features_{start_year}.csv"
-    if not final_path.exists():
-        df_final.to_csv(final_path, index=False)
-        print(f"Dataset final sauvegardé : {final_path}")
-    else:
-        print(f"Dataset final déjà existant : {final_path}")
 
+    df_final.to_csv(final_path, index=False)
+    print(f"Dataset final sauvegardé à : {final_path}")
     # ----------------------------
     # Exécution des modèles
     # ----------------------------
