@@ -115,7 +115,21 @@ def preprocess_anime_dataset(start_year=2010):
     print(details.info())
     print("Nombre de lignes finales :", len(details))
 
+    # Identifier les colonnes qui posent problème (liste ou autre type non hashable)
+    colonnes_a_ignorer = []
+    for col in details.columns:
+        if details[col].apply(lambda x: isinstance(x, list)).any():
+            colonnes_a_ignorer.append(col)
+
+    # Afficher les colonnes traitées
+    colonnes_a_traiter = [col for col in details.columns if col not in colonnes_a_ignorer]
+
+    print("Nombre de valeurs uniques par colonne (sans les colonnes listes) :")
+    print(details[colonnes_a_traiter].nunique())
+
     return details
+
+
 
 
 if __name__ == "__main__":
