@@ -50,10 +50,10 @@ def run_pipeline(start_year=2010, models_to_run=None):
 
     # Dictionnaire des modèles disponibles
     available_models = {
+        "linear": "src.domain.models.linear_model",
         "lasso": "src.domain.models.lasso_model",
         "ridge": "src.domain.models.ridge_model",
-        "elasticnet": "src.domain.models.elasticnet_model",
-        "linear": "src.domain.models.linear_model"
+        "elasticnet": "src.domain.models.elasticnet_model"
     }
 
     # Si aucun modèle n'est précisé, exécuter tous
@@ -69,8 +69,6 @@ def run_pipeline(start_year=2010, models_to_run=None):
         mod = importlib.import_module(mod_path)
         mod.run_model(df=df_final, n_splits=5)  # Utilise le DataFrame final directement
 
-# Point d'entrée
-# ----------------------------
+
 if __name__ == "__main__":
-    # Exécute uniquement Ridge sur le dataset 2010
-    run_pipeline(start_year=2010, models_to_run=["ridge"])
+    run_pipeline(start_year=2010)

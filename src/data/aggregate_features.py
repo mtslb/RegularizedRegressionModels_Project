@@ -6,69 +6,53 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from src.utils.paths import PROCESSED
 
-# NOTE: Les imports de chemin et la configuration de sys.path sont supposés exister en amont.
 def aggregate_recommendation_stats(
     df: pd.DataFrame,
     reco_stats_csv: Path = PROCESSED / "recommendation_features.csv",
-    reco_col: str = "recommendation_mal_id",
-    id_column_in_csv: str = "mal_id",
-    drop_reco_col: bool = True
-):
+    join_column: str = "mal_id",
+    drop_recommendation_cols: bool = True
+) -> pd.DataFrame:
+    """
+    Jointure simple des statistiques agrégées de recommandations (issues de 
+    recommendation_features.csv) avec le DataFrame principal.
+    
+    Args:
+        df (pd.DataFrame): DataFrame principal.
+        reco_stats_csv (Path): Chemin vers le fichier CSV des caractéristiques 
+                                déjà agrégées.
+        join_column (str): Nom de la colonne ID commune aux deux DataFrames.
+        suffix (str): Suffixe à ajouter aux colonnes du fichier de stats 
+                      si elles existent déjà dans df.
 
-    reco_stats = pd.read_csv(reco_stats_csv)
-    reco_stats[id_column_in_csv] = pd.to_numeric(reco_stats[id_column_in_csv], errors="coerce").astype("Int64")
+    Returns:
+        pd.DataFrame: Le DataFrame d'origine enrichi des colonnes de stats.
+    """
 
-    agg_cols = [c for c in reco_stats.columns if c != id_column_in_csv]
-    reco_stats_dict = reco_stats.set_index(id_column_in_csv).to_dict(orient="index")
+    # ----------------------------
+    # 1️⃣ Chargement des stats de référence
+    # ----------------------------
+    try:
+        reco_stats = pd.read_csv(reco_stats_csv)
+    except FileNotFoundError:
+        print(f"Erreur: Fichier de stats non trouvé à {reco_stats_csv}")
+        return df
+        
+    # S'assurer que la colonne de jointure est bien typée
+    reco_stats[join_column] = pd.to_numeric(reco_stats[join_column], errors="coerce").astype("Int64")
 
-    # --- PARSING CORRIGÉ ---
-    def parse_list(x):
-        if isinstance(x, str):
-            try:
-                return list(map(int, ast.literal_eval(x)))
-            except:
-                return []
-        if isinstance(x, list):
-            return [int(v) for v in x if pd.notna(v)]
-        return []
-
-    df[reco_col] = df[reco_col].apply(parse_list)
-
-    # --- AGRÉGATION ---
-    def aggregate_row(lst):
-        if not lst:
-            return pd.Series(
-                {f"{c}_{a}_agg": np.nan for c in agg_cols for a in ["mean","max","min"]}
-            )
-
-        collected = {c: [] for c in agg_cols}
-
-        for rid in lst:
-            row = reco_stats_dict.get(int(rid))
-            if row:
-                for c in agg_cols:
-                    v = row.get(c)
-                    if pd.notna(v):
-                        collected[c].append(v)
-
-        out = {}
-        for c, vals in collected.items():
-            if vals:
-                out[f"{c}_mean_agg"] = np.mean(vals)
-                out[f"{c}_max_agg"]  = np.max(vals)
-                out[f"{c}_min_agg"]  = np.min(vals)
-            else:
-                out[f"{c}_mean_agg"] = np.nan
-                out[f"{c}_max_agg"]  = np.nan
-                out[f"{c}_min_agg"]  = np.nan
-
-        return pd.Series(out)
-
-    df_agg = df[reco_col].apply(aggregate_row)
-    df = pd.concat([df, df_agg], axis=1)
-
-    if drop_reco_col:
-        df = df.drop(columns=[reco_col], errors="ignore")
+    # ----------------------------
+    # 2️⃣ Jointure (Merge)
+    # ----------------------------
+    
+    # Effectuer un LEFT MERGE : on garde toutes les lignes de df
+    # et on ajoute les colonnes correspondantes de reco_stats
+    df = df.merge(
+        reco_stats,
+        on=join_column,
+        how="left",
+    )
+    if drop_recommendation_cols:
+        df = df.drop(columns=["recommendation_mal_id"], errors="ignore")
 
     return df
 
