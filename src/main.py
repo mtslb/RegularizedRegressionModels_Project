@@ -6,23 +6,23 @@ import importlib
 # Ajouter la racine du projet au path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-# ----------------------------
+
 # Imports internes
-# ----------------------------
+
 from src.utils.paths import RAW, PROCESSED, GRAPHS
 from src.data.preprocessing import preprocess_anime_dataset
 from src.data.encoding import encode_features
 from src.data.aggregate_features import aggregate_recommendation_stats, aggregate_staff_stats
 
-# ----------------------------
+
 # Créer les répertoires si nécessaire
-# ----------------------------
+
 PROCESSED.mkdir(exist_ok=True, parents=True)
 GRAPHS.mkdir(exist_ok=True, parents=True)
 
-# ----------------------------
+
 # Pipeline principal
-# ----------------------------
+
 def run_pipeline(start_year=2010, models_to_run=None):
     
     print("=== Étape 1 : Prétraitement ===")
@@ -43,9 +43,9 @@ def run_pipeline(start_year=2010, models_to_run=None):
 
 
     print(f"Dataset final sauvegardé à : {final_path}")
-    # ----------------------------
+    
     # Exécution des modèles
-    # ----------------------------
+    
     print("=== Étape 4 : Exécution des modèles ===")
 
     # Dictionnaire des modèles disponibles

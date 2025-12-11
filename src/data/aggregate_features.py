@@ -28,9 +28,8 @@ def aggregate_recommendation_stats(
         pd.DataFrame: Le DataFrame d'origine enrichi des colonnes de stats.
     """
 
-    # ----------------------------
-    # 1️⃣ Chargement des stats de référence
-    # ----------------------------
+    # Chargement des stats de référence
+
     try:
         reco_stats = pd.read_csv(reco_stats_csv)
     except FileNotFoundError:
@@ -40,9 +39,9 @@ def aggregate_recommendation_stats(
     # S'assurer que la colonne de jointure est bien typée
     reco_stats[join_column] = pd.to_numeric(reco_stats[join_column], errors="coerce").astype("Int64")
 
-    # ----------------------------
-    # 2️⃣ Jointure (Merge)
-    # ----------------------------
+   
+    # Jointure (Merge)
+
     
     # Effectuer un LEFT MERGE : on garde toutes les lignes de df
     # et on ajoute les colonnes correspondantes de reco_stats

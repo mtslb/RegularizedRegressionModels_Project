@@ -29,16 +29,12 @@ def generate_staff_stats(
         pd.DataFrame: DataFrame avec les stats par staffeur et sauvegardé en CSV
     """
     
-    # ----------------------------
-    # 1️⃣ Charger les fichiers
-    # ----------------------------
+    # Charger les fichiers
     staff_works = pd.read_csv(RAW_DIR / staff_works_file)
     anime_details = pd.read_csv(RAW_DIR / details_file)
     anime_stats = pd.read_csv(RAW_DIR / anime_stats_file)
     
-    # ----------------------------
-    # 2️⃣ Ajouter score et members à chaque ligne de staff_works
-    # ----------------------------
+    # Ajouter score et members à chaque ligne de staff_works
     anime_details = anime_details.rename(columns={"mal_id": "anime_mal_id"})
     staff_works = staff_works.merge(
         anime_details[["anime_mal_id", "score", "members"]],
@@ -46,15 +42,11 @@ def generate_staff_stats(
         how="left"
     )
     
-    # ----------------------------
-    # 3️⃣ Ajouter les stats à chaque ligne de staff_works
-    # ----------------------------
+    # Ajouter les stats à chaque ligne de staff_works
     anime_stats = anime_stats.rename(columns={"mal_id": "anime_mal_id"})
     staff_works = staff_works.merge(anime_stats, on="anime_mal_id", how="left")
     
-    # ----------------------------
-    # 4️⃣ Calculer les stats par staffeur
-    # ----------------------------
+    # Calculer les stats par staffeur
     agg_dict = {
         "score": "mean",
         "members": "mean",
@@ -70,9 +62,7 @@ def generate_staff_stats(
         "anime_mal_id": "count_anime_staff"
     })
     
-    # ----------------------------
-    # 5️⃣ Sauvegarder
-    # ----------------------------
+    # Sauvegarder
     staff_stats_path = PROCESSED_DIR / "staff_features.csv"
     staff_stats.to_csv(staff_stats_path, index=False)
     

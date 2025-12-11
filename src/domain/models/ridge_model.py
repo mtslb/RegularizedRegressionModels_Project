@@ -16,7 +16,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
 
     set_seed(42)
 
-    # --- Load
+    # Load
     if df is None:
         if dataset_path is None:
             raise ValueError("Il faut fournir df ou dataset_path")
@@ -26,21 +26,21 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     if not isinstance(X, pd.DataFrame):
         X = pd.DataFrame(X)
 
-    # --- Clean / numeric / impute
+    # Clean / numeric / impute
     X = X.apply(pd.to_numeric, errors="coerce")
     X_imputed = X.fillna(X.mean())
 
-    # --- Drop constant features
+    # Drop constant features
     cols_to_drop = X_imputed.var()[X_imputed.var() < 1e-6].index
     X_final = X_imputed.drop(columns=cols_to_drop)
     if len(cols_to_drop) > 0:
         print(f"⚠️ {len(cols_to_drop)} features constantes supprimées : {list(cols_to_drop)}")
 
-    # --- Scaling
+    # Scaling
     scaler = dp.StandardScaler()
     X_scaled = scaler.fit_transform(X_final)
 
-    # --- Targets
+    # Targets
     y_score = y["y_score"]
     y_members = y["y_members"]
 
@@ -49,11 +49,11 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
 
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
 
-    # --- Collect predictions
+    # Collect predictions
     all_y_true_score, all_y_pred_score = [], []
     all_y_true_members, all_y_pred_members = [], []
 
-    # --- K-Fold y_score
+    # K-Fold y_score
     metrics_score_list = []
     for train_idx, val_idx in kf.split(X_scaled):
         X_train, X_val = X_scaled[train_idx], X_scaled[val_idx]
@@ -70,7 +70,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     print("\n===== Ridge - y_score (K-FOLD) =====")
     print(metrics_score_avg)
 
-    # --- K-Fold y_members (sans log)
+    # K-Fold y_members (sans log)
     metrics_members_list = []
     for train_idx, val_idx in kf.split(X_scaled):
         X_train, X_val = X_scaled[train_idx], X_scaled[val_idx]
@@ -87,7 +87,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     print("\n===== Ridge - y_members (K-FOLD) =====")
     print(metrics_members_avg)
 
-    # --- Graphs per metric (folds)
+    # Graphs per metric (folds)
     for metric in metrics_score_list[0].keys():
         plt.figure()
         plt.plot([m[metric] for m in metrics_score_list], marker="o")
@@ -108,7 +108,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
         plt.savefig(GRAPHS / f"ridge_y_members_{metric}.png", dpi=300)
         plt.close()
 
-    # --- Regression scatter + error hist
+    # Regression scatter + error hist
     y_true_score_full = np.concatenate(all_y_true_score)
     y_pred_score_full = np.concatenate(all_y_pred_score)
 
@@ -124,5 +124,53 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
                     "Ridge - y_members",
                     save_scatter=GRAPHS / "ridge_regression_y_members.png",
                     save_hist=GRAPHS / "ridge_errors_y_members.png")
+    
+
+        # ===============================
+    #   REGULARIZATION PATH - RIDGE
+    # ===============================
+
+    alphas = np.logspace(-4, 4, 80)   # 80 alphas entre 1e-4 et 1e4
+    coefs_ridge = []
+
+    for a in alphas:
+        model = Ridge(alpha=a)
+        model.fit(X_scaled, y_score)
+        coefs_ridge.append(model.coef_)
+
+    coefs_ridge = np.array(coefs_ridge)
+
+    plt.figure(figsize=(12, 7))
+    for i in range(coefs_ridge.shape[1]):
+        plt.plot(np.log10(alphas), coefs_ridge[:, i])
+
+    plt.xlabel("log10(alpha)")
+    plt.ylabel("Coefficient value")
+    plt.title("Ridge Regularization Path (y_score)")
+    plt.grid(True)
+    plt.savefig(GRAPHS / "ridge_regularization_path_y_score.png", dpi=300)
+    plt.close()
+
+    coefs_ridge2 = []
+
+    for a in alphas:
+        model = Ridge(alpha=a)
+        model.fit(X_scaled, y_members)
+        coefs_ridge2.append(model.coef_)
+
+    coefs_ridge2 = np.array(coefs_ridge2)
+
+    plt.figure(figsize=(12, 7))
+    for i in range(coefs_ridge2.shape[1]):
+        plt.plot(np.log10(alphas), coefs_ridge2[:, i])
+
+    plt.xlabel("log10(alpha)")
+    plt.ylabel("Coefficient value")
+    plt.title("Ridge Regularization Path (y_members)")
+    plt.grid(True)
+    plt.savefig(GRAPHS / "ridge_regularization_path_y_members.png", dpi=300)
+    plt.close()
+
+
 
     return metrics_score_avg, metrics_members_avg

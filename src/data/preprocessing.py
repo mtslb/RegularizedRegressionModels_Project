@@ -21,17 +21,15 @@ def preprocess_anime_dataset(start_year=2010):
     Returns:
         pd.DataFrame: dataset prétraité
     """
-    # ----------------------------
-    # 1. Charger les fichiers
-    # ----------------------------
+    
+    # Charger les fichiers
+ 
     details = pd.read_csv(RAW_DIR / "details.csv")
     characters = pd.read_csv(RAW_DIR / "character_anime_works.csv")
     recommendations = pd.read_csv(RAW_DIR / "recommendations.csv")
     staff_works = pd.read_csv(RAW_DIR / "person_anime_works.csv")
-
-    # ----------------------------
-    # 2. Filtrer colonnes et dropna
-    # ----------------------------
+    
+    # Filtrer colonnes et dropna
     details = details[COLUMNS_TO_KEEP]
 
     # Garder uniquement les animés commencés après start_year
@@ -62,44 +60,33 @@ def preprocess_anime_dataset(start_year=2010):
     details = details.drop(columns=["start_date"])
     print("Après dropna :", len(details))
 
-    # ----------------------------
-    # 3. Ajouter nombre de personnages
-    # ----------------------------
+    # Ajouter nombre de personnages
     char_counts = characters.groupby("anime_mal_id")["role"].value_counts().unstack(fill_value=0)
     char_counts = char_counts.rename(columns={"Main": "main_characters", "Supporting": "supporting_characters"})
     details = details.merge(char_counts, left_on="mal_id", right_index=True, how="left")
     details[["main_characters", "supporting_characters"]] = details[["main_characters", "supporting_characters"]].fillna(0).astype(int)
 
-    # ----------------------------
-    # 4. Ajouter recommandations
-    # ----------------------------
+    # Ajouter recommandations
+    
     rec_grouped = recommendations.groupby("mal_id")["recommendation_mal_id"].apply(list).reset_index()
     details = details.merge(rec_grouped, on="mal_id", how="left")
     details["recommendation_mal_id"] = details["recommendation_mal_id"].apply(lambda x: x if isinstance(x, list) else [])
 
-    # ----------------------------
-    # 5. Ajouter liste des staffeurs
-    # ----------------------------
+    # Ajouter liste des staffeurs
     staff_grouped = staff_works.groupby("anime_mal_id")["person_mal_id"].apply(list).reset_index()
     details = details.merge(staff_grouped, left_on="mal_id", right_on="anime_mal_id", how="left")
     details = details.drop(columns=["anime_mal_id"])
     details["staff"] = details["person_mal_id"].apply(lambda x: x if isinstance(x, list) else [])
     details = details.drop(columns=["person_mal_id"])
 
-    # ----------------------------
-    # 6. Supprimer lignes avec listes vides
-    # ----------------------------
+    # Supprimer lignes avec listes vides
     details = details[(details["staff"].map(len) > 0) & (details["recommendation_mal_id"].map(len) > 0)]
 
-    # ----------------------------
-    # 7. Renommer score et members
-    # ----------------------------
+    # Renommer score et members
     details = details.rename(columns={"score": "y_score", "members": "y_members"})
     details.dropna()
 
-    # ----------------------------
-    # 8. Sauvegarder
-    # ----------------------------
+    # Sauvegarder
     output_path = PROCESSED_DIR / f"anime_dataset_{start_year}.csv"
 
     # Générer le CSV uniquement si le fichier n'existe pas

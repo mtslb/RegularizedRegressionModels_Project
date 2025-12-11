@@ -30,16 +30,12 @@ def generate_reco_features(
         pd.DataFrame: DataFrame complet avec toutes les stats agrégées
     """
     
-    # ----------------------------
-    # 1️⃣ Charger les fichiers
-    # ----------------------------
+    # Charger les fichiers
     reco = pd.read_csv(RAW_DIR / recommendations_file)
     details = pd.read_csv(RAW_DIR / details_file)
     stats = pd.read_csv(RAW_DIR / stats_file)
     
-    # ----------------------------
-    # 2️⃣ Ajouter score et members aux recommendations
-    # ----------------------------
+    # Ajouter score et members aux recommendations
     details_renamed = details.rename(columns={"mal_id": "recommendation_mal_id"})
     reco = reco.merge(
         details_renamed[["recommendation_mal_id", "score", "members"]],
@@ -47,16 +43,12 @@ def generate_reco_features(
         how="left"
     )
 
-    # ----------------------------
-    # 3️⃣ Ajouter stats des watchers
-    # ----------------------------
+
+    # Ajouter stats des vues aux recommendations
     stats_renamed = stats.rename(columns={"mal_id": "recommendation_mal_id"})
     reco = reco.merge(stats_renamed, on="recommendation_mal_id", how="left")
     
-    # ----------------------------
-    # 4️⃣ Calculer toutes les stats agrégées par anime
-    # ----------------------------
-    # Stats de score et members
+    # Calculer toutes les stats agrégées par anime
     agg_score_members = reco.groupby("mal_id").agg(
         mean_score_reco=("score", "mean"),
         max_score_reco=("score", "max"),
@@ -74,9 +66,7 @@ def generate_reco_features(
     # Fusionner toutes les stats
     reco_features = agg_score_members.merge(agg_watchers, left_index=True, right_index=True).reset_index()
     
-    # ----------------------------
-    # 5️⃣ Sauvegarde finale
-    # ----------------------------
+    # Sauvegarde finale
     final_path = PROCESSED_DIR / "recommendation_features.csv"
     reco_features.to_csv(final_path, index=False)
     

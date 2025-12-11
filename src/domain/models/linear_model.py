@@ -16,7 +16,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
 
     set_seed(42)
 
-    # --- Load
+    # Load
     if df is None:
         if dataset_path is None:
             raise ValueError("Il faut fournir df ou dataset_path")
@@ -26,17 +26,17 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     if not isinstance(X, pd.DataFrame):
         X = pd.DataFrame(X)
 
-    # --- Numeric / Impute
+    # Numeric / Impute
     X = X.apply(pd.to_numeric, errors="coerce")
     X_imputed = X.fillna(X.mean())
 
-    # --- Drop constants
+    # Drop constants
     cols_to_drop = X_imputed.var()[X_imputed.var() < 1e-6].index
     X_final = X_imputed.drop(columns=cols_to_drop)
     if len(cols_to_drop) > 0:
         print(f"⚠️ {len(cols_to_drop)} features constantes supprimées : {list(cols_to_drop)}")
 
-    # --- Scaling
+    # Scaling
     scaler = dp.StandardScaler()
     X_scaled = scaler.fit_transform(X_final)
 
@@ -52,7 +52,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     all_y_true_score, all_y_pred_score = [], []
     all_y_true_members, all_y_pred_members = [], []
 
-    # --- K-Fold y_score
+    # K-Fold y_score
     metrics_score_list = []
     for train_idx, val_idx in kf.split(X_scaled):
         X_train, X_val = X_scaled[train_idx], X_scaled[val_idx]
@@ -69,7 +69,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     print("\n===== LinearRegression - y_score (K-FOLD) =====")
     print(metrics_score_avg)
 
-    # --- K-Fold y_members
+    # K-Fold y_members
     metrics_members_list = []
     for train_idx, val_idx in kf.split(X_scaled):
         X_train, X_val = X_scaled[train_idx], X_scaled[val_idx]
@@ -86,7 +86,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
     print("\n===== LinearRegression - y_members (K-FOLD) =====")
     print(metrics_members_avg)
 
-    # --- Graphs per metric
+    # Graphs per metric
     for metric in metrics_score_list[0].keys():
         plt.figure()
         plt.plot([m[metric] for m in metrics_score_list], marker="o")
@@ -103,7 +103,7 @@ def run_model(df=None, dataset_path: str = None, n_splits=5):
         plt.savefig(GRAPHS / f"linear_y_members_{metric}.png", dpi=300)
         plt.close()
 
-    # --- Regression plots
+    # Regression plots
     y_true_score_full = np.concatenate(all_y_true_score)
     y_pred_score_full = np.concatenate(all_y_pred_score)
 
